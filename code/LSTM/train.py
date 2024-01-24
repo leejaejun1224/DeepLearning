@@ -4,6 +4,8 @@ import time
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib
+# matplotlib.use('Agg')
 
 import torch
 import torch.nn as nn
@@ -50,7 +52,7 @@ X_train_tensors_f = torch.reshape(X_train_tensors, (X_train_tensors.shape[0], 1,
 X_test_tensors_f = torch.reshape(X_test_tensors, (X_test_tensors.shape[0], 1, X_test_tensors.shape[1]))
 
 # 변수값 설정
-num_epochs = 10000
+num_epochs = 1000
 lr = 0.0001
 
 input_size=5
@@ -97,7 +99,7 @@ plt.plot(predicted, label='Predicted Data')
 plt.title('Time-Series Prediction')
 plt.legend()
 plt.show()
-
+plt.savefig('output.png')
 
 
 
