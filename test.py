@@ -1,25 +1,22 @@
 import torch
 import torch.nn as nn
+# 가정: d_model = 512, 임베딩 차원
+d_model = 512
+# 임의의 임베딩 벡터 생성 (예: 배치 크기 64, 시퀀스 길이 20)
+batch_size = 1
+seq_length = 4
+embedding = torch.randn(batch_size, seq_length, d_model)
 
+# 임베딩 스케일링
+scaling_factor = torch.sqrt(torch.tensor(d_model, dtype=torch.float32))
+scaled_embedding = embedding * scaling_factor
 
-def get_angles(position, i, d_model):
-    # 이 함수는 각 position과 i에 대해 계산된 각도를 반환합니다.
-    angle_rates = 1 / torch.pow(10000, (2 * (i // 2)) / torch.tensor(d_model, dtype=torch.float32))
-    return position * angle_rates
+print("원래 임베딩 크기:", embedding.size())
+print("스케일링 후 임베딩 크기:", scaled_embedding.size())
+print(embedding)
+print(scaled_embedding)
 
-def positional_encoding(position, d_model):
-    angle_rads = get_angles(
-        position=torch.arange(position, dtype=torch.float32).unsqueeze(1),
-        i=torch.arange(d_model, dtype=torch.float32).unsqueeze(0),
-        d_model=d_model)
-
-    return angle_rads
-
-pos, d_model = 50, 128
-position = torch.arange(pos, dtype=torch.float32).unsqueeze(1)
-i=torch.arange(d_model, dtype=torch.float32).unsqueeze(0)
-
-
-# print(positional_encoding(pos, d_model))
-array = torch.arange(9)
-print(2*array)
+embedding_layer = nn.Embedding(10000, 512)
+input_word = torch.tensor([45])  # '안녕'의 정수 인코딩 값
+embedded_word = embedding_layer(input_word)
+print(embedded_word)
