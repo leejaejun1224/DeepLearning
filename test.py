@@ -1,22 +1,36 @@
 import torch
 import torch.nn as nn
-# 가정: d_model = 512, 임베딩 차원
-d_model = 512
-# 임의의 임베딩 벡터 생성 (예: 배치 크기 64, 시퀀스 길이 20)
-batch_size = 1
-seq_length = 4
-embedding = torch.randn(batch_size, seq_length, d_model)
+import torch.optim as optim
 
-# 임베딩 스케일링
-scaling_factor = torch.sqrt(torch.tensor(d_model, dtype=torch.float32))
-scaled_embedding = embedding * scaling_factor
+model = nn.Sequential(
+    nn.Linear(10,10),
+    nn.ReLU(),
+    nn.Linear(10,1),
+)
 
-print("원래 임베딩 크기:", embedding.size())
-print("스케일링 후 임베딩 크기:", scaled_embedding.size())
-print(embedding)
-print(scaled_embedding)
+criterion = nn.CrossEntropyLoss()
 
-embedding_layer = nn.Embedding(10000, 512)
-input_word = torch.tensor([45])  # '안녕'의 정수 인코딩 값
-embedded_word = embedding_layer(input_word)
-print(embedded_word)
+optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+
+scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1)
+
+num_epochs = 10
+inputs = torch.randn(100, 10)
+targets = torch.randn(100, 1)
+print(inputs.shape)
+print(targets.shape)
+for epoch in range(num_epochs):
+    model.train()
+    optimizer.zero_grad()
+    outputs = model(inputs)
+    print(outputs.shape)
+    loss = criterion(outputs, targets)
+    loss.backward()
+    optimizer.step()
+    scheduler.step()
+
+    if (epoch+1)%10 == 0:
+        print(f'Epoch {epoch+1}/{num_epochs}, Loss: {loss.item()}')
+
+

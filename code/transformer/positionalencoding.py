@@ -10,27 +10,29 @@ class PositionalEncoding(nn.Module):
 
 
     def get_angle_component(self, position, i, d_model):
-        angles = torch.arange(1/torch.pow(10000*((2*i)//2)/torch.tensor(d_model )))
-        return position * angles
-
+        # 각도 계산을 위한 식 수정
+        angle_rates = 1 / torch.pow(10000, (2 * (i // 2)) / d_model)
+        return position.unsqueeze(1) * angle_rates.unsqueeze(0)
 
     def positional_encoding(self, position, d_model):
-        angle_rads = self.get_angle_component(position = torch.arange(position, dtype=torch.float), 
-                                         i = torch.arange(d_model, dtype=torch.float), 
-                                         d_model=d_model)
+        # 각도 계산
+        angle_rads = self.get_angle_component(
+            position=torch.arange(position, dtype=torch.float), 
+            i=torch.arange(d_model, dtype=torch.float), 
+            d_model=d_model
+        )
         
+        # 사인 및 코사인 적용
         sines = torch.sin(angle_rads[:, 0::2])
         cosines = torch.cos(angle_rads[:, 1::2])
 
-        angle_rads = np.zeros(angle_rads.shape)
+        # 결과 텐서 구성
+        pos_encoding = torch.zeros_like(angle_rads)
+        pos_encoding[:, 0::2] = sines
+        pos_encoding[:, 1::2] = cosines
 
-        angle_rads[:, 0::2] = sines
-        angle_rads[:, 1::2] = cosines
+        return pos_encoding.unsqueeze(0)
 
-        angle_rads.unsqueeze(0)
-
-
-        return angle_rads.float()
 
     def forward(self, x):
         #input은 batchsize * len_seq * d_model로 구성되어잇음.

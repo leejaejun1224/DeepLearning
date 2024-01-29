@@ -3,8 +3,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import math, copy, time
-from torch.autograd import Variable
 import matplotlib.pyplot as plt
+from torch.autograd import Variable
+
+from mask import create_look_ahead_mask
 
 #4개의 다른 선형 변환을 수행하기 위해서 4개의 fc layer를 생성해줌 
 # 대신 input은 같음. 아래에 나옴
@@ -30,7 +32,7 @@ def clones(module, N):
 
 #     return torch.matmul(p_attn, value), p_attn
 
-def scaled_dot_product_attention(query, key, value, mask):
+def scaled_dot_product_attention(query, key, value, mask=None):
     
     #query, key, value의 크기는 모두 batch_size, attention head갯수, 문장에서 단어의 갯수, d_model/attention_head의 갯수
     matmul_qk = torch.matmul(query, key.transpose(-2, -1))
@@ -51,7 +53,7 @@ def scaled_dot_product_attention(query, key, value, mask):
 class MultiHeadAttention(nn.Module):
     #여기서 h는 head의 갯수를 의미, 
     def __init__(self, num_head, d_model, dropout=0.1):
-        super(MultiHeadAttention).__init__()
+        super(MultiHeadAttention, self).__init__()
         # 뒤에가 True가 아니면 에러 발생시킴
         # 여기서 d_model은 input이 있고 이를 임베딩했을 때의 크기를 말함.
         assert d_model%num_head == 0
@@ -93,6 +95,6 @@ class MultiHeadAttention(nn.Module):
 
         concat_attention = x.reshape(nbatches, -1, self.d_model)
 
-        output = self.linears[-1](output)
+        output = self.linears[-1](concat_attention)
 
         return output
