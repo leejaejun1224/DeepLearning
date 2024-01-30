@@ -40,14 +40,14 @@ def scaled_dot_product_attention(query, key, value, mask=None):
 
     attentionscore = matmul_qk / torch.sqrt(torch.tensor(depth, dtype=torch.float32))
 
-
     if mask is not None:
+        # print(mask.shape, "!!!")
+        # print(attentionscore.shape, "===")
         attentionscore += (mask * -1e9)
-
     attentionscore = F.softmax(attentionscore, dim=-1)
     
     output = torch.matmul(attentionscore, value)
-
+    # print(output.shape, "|||")
     return output, attentionscore
 
 class MultiHeadAttention(nn.Module):
@@ -70,10 +70,6 @@ class MultiHeadAttention(nn.Module):
 
     def forward(self, query, key, value, mask=None):
         
-        # 이 부분 이해 못함
-        if mask is not None:
-            mask = mask.unsqueeze(1)
-
         # 근데 이렇게 되어있으면 한 문장에서 단어의 갯수를 의미하는게 아닌가?
         # 아님 여기에선 몇 개의 문장을 넣을 것인가를 말함.
         nbatches = query.size(0)
@@ -88,7 +84,7 @@ class MultiHeadAttention(nn.Module):
         # 8개로 쪼개서
         # 여기서 헷갈리면 안되는데 x에서 쪼개고 가중치에 곱해지는 것이 아니라 x에서 가중치를 (d_model * d_model) 이 만큼 곱한 다음에 
         # 쪼개는 것이기 때문에 input인 x의 정보 즉 단어를 쪼개서 네트워크에 넣는 것이 아니다는 것을 헷갈리지 말자.
-        x, self.attn = scaled_dot_product_attention(query, key, value)
+        x, self.attn = scaled_dot_product_attention(query, key, value, mask)
         #아직 코드 미완성
 
         x = x.permute(0,2,1,3)

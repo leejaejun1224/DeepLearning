@@ -11,7 +11,7 @@ from torch.nn.utils.rnn import pad_sequence
 urllib.request.urlretrieve("https://raw.githubusercontent.com/songys/Chatbot_data/master/ChatbotData.csv", filename="ChatBotData.csv")
 train_data = pd.read_csv('ChatBotData.csv')
 train_data.head()
-print('챗봇 샘플의 개수 :', len(train_data))
+# print('챗봇 샘플의 개수 :', len(train_data))
 
 questions = []
 for sentence in train_data['Q']:
@@ -29,7 +29,7 @@ for sentence in train_data['A']:
     sentence = sentence.strip()
     answers.append(sentence)
 
-print(len(questions))
+# print(len(questions))
 from tokenizers import Tokenizer
 from tokenizers.models import BPE
 from tokenizers.trainers import BpeTrainer
@@ -63,7 +63,6 @@ VOCAB_SIZE += 2
 
 MAX_LENGTH = 40
 
-# 토큰화 / 정수 인코딩 / 시작 토큰과 종료 토큰 추가 / 패딩
 
 def pad_to_max_length(tensor, max_length):
     if len(tensor) > max_length:
@@ -117,13 +116,13 @@ dataset = CustomDataset(questions, answers)
 # DataLoader를 사용하여 데이터셋을 셔플하고 배치 처리
 data_loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True, drop_last=True)
 
-for batch in data_loader:
-    print(batch['inputs'].shape)
-    break
+# for batch in data_loader:
+#     print(batch['inputs'].shape)
+#     break
 
 
 from transformer import Transformer
-num_epochs = 1
+num_epochs = 50
 num_vocabs = 9000
 num_layers = 2
 dff = 512
@@ -132,29 +131,31 @@ num_heads = 8
 dropout=0.1
 small_transformer = Transformer(d_model, num_heads, dff, num_vocabs, dropout, num_layers)
 
-from torch.optim import Adam
+import torch.optim as optim
+from torch.optim import lr_scheduler
 from scheduler import CustomSchedule
 
-learning_rate = CustomSchedule(d_model=d_model)
 
-optimizer = Adam(params=small_transformer.parameters(), lr=0.0001, betas=(0.9, 0.98), eps=1e-9)  # 적절한 옵티마이저를 정의하세요
 
-def accuracy(y_true, y_pred):
-    # y_true: (batch_size, MAX_LENGTH - 1)
-    # y_pred: (batch_size, MAX_LENGTH - 1, num_classes)
-    y_true = y_true.view(-1, MAX_LENGTH - 1)
-    y_pred = y_pred.max(dim=2)[1]  # 가장 높은 확률을 가진 클래스 선택
-    correct = (y_true == y_pred).float()  # 예측이 맞았는지 확인
-    return correct.sum() / y_true.numel()
+# # 기존 정의 스케줄러 사용
+# lr_scheduler = lr_scheduler.LambdaLR(optimizer, lambda step: scheduler(step))
 
-# 손실 함수
+scheduler = CustomSchedule(d_model=d_model)
+
+optimizer = optim.Adam(params=small_transformer.parameters(), lr=0.001, betas=(0.9, 0.98), eps=1e-9)  # 적절한 옵티마이저를 정의하세요
+# # 손실 함수
 loss_function = nn.CrossEntropyLoss()
 
-# 학습 루프 예시
+
+# optimizer = optim.Adam(params=small_transformer.parameters(), lr=0.0, betas=(0.9, 0.98), eps=1e-9)  # 초기 학습률을 0으로 설정
+# scheduler = CustomSchedule(d_model)  # d_model에는 적절한 값을 지정해야 합니다.
+# lambda_scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=scheduler)
+
+# # training 가자
 for epoch in range(num_epochs):
     # 에폭 시작 시 lr_scheduler 업데이트
+    small_transformer.train()
     for batch in data_loader:
-        small_transformer.train()
         optimizer.zero_grad()
         # 모델의 예측
         y_pred = small_transformer(batch['inputs'], batch['dec_inputs'])
@@ -165,9 +166,11 @@ for epoch in range(num_epochs):
 
         loss.backward()
         optimizer.step()
-        
-    if (epoch+1)%2 == 1:
-        print(f'Epoch {epoch+1}/{num_epochs}, Loss: {loss.item()}')
+    # scheduler.step()
+    # lambda_scheduler.step()  # 각 epoch마다 scheduler를 호출하여 learning rate을 업데이트합니다
+    print(f'Epoch {epoch+1}/{num_epochs}, Loss: {loss.item()}')
+
+torch.save(small_transformer.state_dict(), '/container/home/DeepLearning/code/transformer/weights/model.pth')
 
 import numpy as np
 import re
@@ -188,6 +191,8 @@ def evaluate(sentence):
     output = torch.tensor([START_TOKEN]).unsqueeze(0)
 
     small_transformer.eval()
+
+    # 추론과정에선 필요없는 그래디언트 꺼야함.
     with torch.no_grad():
         for i in range(MAX_LENGTH):
             predictions = small_transformer(sentence, output)
@@ -208,7 +213,7 @@ def predict(sentence):
     prediction = evaluate(sentence)
 
     # 토크나이저를 통해 정수 시퀀스를 문자열로 디코딩
-    predicted_sentence = tokenizer.decode([i for i in prediction if i < VOCAB_SIZE-2])
+    predicted_sentence = tokenizer.decode([i for i in prediction if i < VOCAB_SIZE])
 
     print('Input: {}'.format(sentence))
     print('Output: {}'.format(predicted_sentence))

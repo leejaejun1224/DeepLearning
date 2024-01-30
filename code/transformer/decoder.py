@@ -28,7 +28,7 @@ class DecoderLayer(nn.Module):
         self.dropout3 = nn.Dropout(dropout)
 
     def forward(self, x, encoder_output, look_ahead_mask, padding_mask):
-        # lam = create_look_ahead_mask(x)
+        # print("decoding")
         mmha_output1 = self.mmha1(x, x, x, look_ahead_mask)
         mmha_output1 = self.dropout1(mmha_output1)
         output1 = self.layernorm1(x + mmha_output1)
@@ -62,9 +62,8 @@ class Decoder(nn.Module):
         x = self.pos_encoding(x)
         x = self.dropout(x)
 
-        look_ahead_mask = create_look_ahead_mask(x)
+        look_ahead_mask = create_look_ahead_mask(x, x.size(0))
         for i in range(self.num_layers):
             x = self.decoder_layer[i](x, encoder_output, look_ahead_mask, padding_mask)
 
         return x
-
