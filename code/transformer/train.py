@@ -222,3 +222,5 @@ def predict(sentence):
 
 output = predict("영화 볼래?")
 print(output)
+
+
