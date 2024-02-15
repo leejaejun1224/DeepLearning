@@ -56,14 +56,20 @@ class Decoder(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x, encoder_output, padding_mask):
-        seq_len = x.size(1)
+        # print("size of decoder input : ", x.shape) => [batch_size, len_seq-1], [64, 39]
         x = self.embedding(x)
         x *= torch.sqrt(torch.tensor(self.d_model, dtype=torch.float32))
         x = self.pos_encoding(x)
         x = self.dropout(x)
 
+        # print("size of decoder input : ", x.shape) => [batch_size, len_seq, d_model]
         look_ahead_mask = create_look_ahead_mask(x, x.size(0))
+        # print("size of decoder masked look ahead attention mask : ", look_ahead_mask.shape) =>[batch_size, 1, len_seq-1, len_seq-1], [64,1,39,39] 
+        # len_seq의 -1인 이유는 decoder는 뒤에거 하나를 빼버리기 때문에 <eos>
+        # print("size of decoder mask size : ", padding_mask.shape) => [batch_size, 1, 1, len_seq], [64, 1, 1, 40]
         for i in range(self.num_layers):
             x = self.decoder_layer[i](x, encoder_output, look_ahead_mask, padding_mask)
 
         return x
+
+

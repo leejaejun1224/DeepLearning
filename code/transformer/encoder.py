@@ -22,6 +22,7 @@ class EncoderLayer(nn.Module):
         self.dropout1 = nn.Dropout(dropout)
         self.dropout2 = nn.Dropout(dropout)
 
+
     def forward(self, x, padding_mask):
         # print("encoding")
 
@@ -29,7 +30,8 @@ class EncoderLayer(nn.Module):
 
         #사실 기술 할 것도 없음. 그냥 랜덤으로 0으로 만들어버리는 것 뿐
         attn_output = self.dropout1(attn_output)
-        #skip connection(residual)
+        # skip connection(residual)
+        # attn_output의 크기와 input인 x의 크기는 같음.
         output1 = self.layernorm1(x + attn_output)
 
         ffn_out = self.ffn(output1)
@@ -48,23 +50,22 @@ class Encoder(nn.Module):
 
         self.embedding = nn.Embedding(num_vocabs, d_model)
 
-        #이렇게 하면 너무 커지는데 우리는 len_seq만 알면 되는데
         self.pos_encoding = PositionalEncoding(num_vocabs, d_model)
         self.encoderlayer = nn.ModuleList([EncoderLayer(d_model, num_heads, dff, dropout) for _ in range(num_layers)])
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x, mask): 
-
+        # print("size of decoder input : ", x.shape) => [batch_size, len_seq], [64, 40]
         x = self.embedding(x)
-        # print("size of embedding tensor", x.shape)
+        # print("size of embedding tensor", x.shape) => [batch_size, len_seq, d_model], [64, 40, 256]
         x *= torch.sqrt(torch.tensor(self.d_model, dtype=torch.float32))
         x = self.pos_encoding(x)
         x = self.dropout(x)
 
-        # print("encoder mask shape :", mask.shape)
+        # print("size of encoder input : ", x.shape) => [batch_size, len_seq, d_model], [64, 40, 256]
+        # print("encoder mask shape :", mask.shape) => [batch_size, 1, 1, len_seq], [64, 1, 1, 40]
         for i in range(self.num_layers):
             x = self.encoderlayer[i](x, mask)
 
         return x
-
 

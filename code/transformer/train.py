@@ -120,7 +120,6 @@ data_loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True, drop_last
 #     print(batch['inputs'].shape)
 #     break
 
-
 from transformer import Transformer
 num_epochs = 50
 num_vocabs = 9000
@@ -142,7 +141,7 @@ from scheduler import CustomSchedule
 
 scheduler = CustomSchedule(d_model=d_model)
 
-optimizer = optim.Adam(params=small_transformer.parameters(), lr=0.001, betas=(0.9, 0.98), eps=1e-9)  # 적절한 옵티마이저를 정의하세요
+optimizer = optim.Adam(params=small_transformer.parameters(), lr=scheduler, betas=(0.9, 0.98), eps=1e-9)  # 적절한 옵티마이저를 정의하세요
 # # 손실 함수
 loss_function = nn.CrossEntropyLoss()
 

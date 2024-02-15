@@ -94,4 +94,4 @@ def predict(sentence):
 
     return predicted_sentence
 
-predict("좋아해")
+predict("살을 빼야해")

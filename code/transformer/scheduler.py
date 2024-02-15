@@ -26,14 +26,16 @@ class CustomSchedule():
             step = step.clone().detach().float()  # 이미 텐서라면 clone().detach() 사용
         else:
             step = torch.tensor(step, dtype=torch.float32)
+        print(step)
         arg1 = torch.rsqrt(step)
         arg2 = step * (self.warmup_steps ** -1.5)
 
+        print(self.d_model * torch.min(arg1, arg2))
         return self.d_model * torch.min(arg1, arg2)
 
-# sample_learning_rate = CustomSchedule(d_model=128)
+sample_learning_rate = CustomSchedule(d_model=128)
 
-# plt.plot(sample_learning_rate(torch.arange(200000, dtype=torch.float32)))
-# plt.ylabel("Learning Rate")
-# plt.xlabel("Train Step")
-# plt.savefig('/container/home/DeepLearning/code/transformer/custom_learning_rate.png')
+plt.plot(sample_learning_rate(torch.arange(200000, dtype=torch.float32)))
+plt.ylabel("Learning Rate")
+plt.xlabel("Train Step")
+plt.savefig('/container/home/DeepLearning/code/transformer/custom_learning_rate.png')
